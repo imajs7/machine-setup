@@ -1,104 +1,185 @@
-#!/bin/bash
+#!/usr/bin/env bash
+set -e
 
-# Checkout to branch x
-git config --global alias.co checkout
+echo "Installing Git aliases..."
 
-# Git clean node_modules
-git config --global alias.cnm '!git rm -rf --cached node_modules'
+# ---------------------------------------------------------
+# Everyday navigation & status
+# ---------------------------------------------------------
 
-# Show a summarized git log
-git config --global alias.lg "log --color --graph --pretty=format:'%Cred%h%Creset -%C(yellow)%d%Creset %s %Cgreen(%cr) %C(bold blue)<%an>%Creset' --abbrev-commit --date=relative"
+# Switch branch
+git config --global alias.co switch
 
-# Show the current git branch
-git config --global alias.current "rev-parse --abbrev-ref HEAD"
+# Create and switch to new branch
+git config --global alias.newbr "switch -c"
 
-# Show a list of aliases
-git config --global alias.aliases "config --get-regexp alias"
-
-# Show a detailed git status
+# Compact status
 git config --global alias.st "status -sb"
 
-# Show the last commit
-git config --global alias.last "log -1 HEAD"
+# Current branch
+git config --global alias.current "branch --show-current"
 
-# Show a list of branches
+# Local branches
+git config --global alias.br "branch"
+
+# All branches
 git config --global alias.branches "branch -a"
 
-# Show a list of remote repositories
+# Remote repositories
 git config --global alias.remotes "remote -v"
 
-# Add Git remove remote origin
-git config --global alias.rm-remote '!f() { if [ -z "$1" ]; then git remote rm origin; else git remote rm "$1"; fi }; f'
 
-# Show a list of staged files
-git config --global alias.staged "diff --cached"
+# ---------------------------------------------------------
+# Logs & history
+# ---------------------------------------------------------
 
-# Show a list of untracked files
-git config --global alias.untracked "ls-files --others --exclude-standard"
+# Pretty graphical log
+git config --global alias.lg \
+"log --color --graph --pretty=format:'%Cred%h%Creset -%C(yellow)%d%Creset %s %Cgreen(%cr) %C(bold blue)<%an>%Creset' --abbrev-commit"
 
-# Amend the last commit
-git config --global alias.amend "commit --amend --no-edit"
+# Last commit
+git config --global alias.last "log -1 HEAD"
 
-# Undo last commit
-git config --global alias.undo "reset HEAD~1 --mixed"
-
-# Push current branch to origin
-git config --global alias.pusho "push -u origin HEAD"
-
-# Pull from origin
-git config --global alias.pullo "pull origin"
-
-# Show a compact view of the git reflog
+# Compact reflog
 git config --global alias.reflog "reflog --pretty=oneline"
 
-# Show a list of contributors
+# Contributors
 git config --global alias.contributors "shortlog -sn --no-merges"
 
-# Show changes between two commits
+
+# ---------------------------------------------------------
+# Diff / inspection
+# ---------------------------------------------------------
+
+# Staged changes
+git config --global alias.staged "diff --cached"
+
+# Unstaged changes
+git config --global alias.unstaged "diff"
+
+# Untracked files
+git config --global alias.untracked \
+"ls-files --others --exclude-standard"
+
+# Changed filenames/status
 git config --global alias.changes "diff --name-status"
 
-# Show the diff of a file at a specific commit
-git config --global alias.filediff "diff --find-renames --find-copies"
+# File diff with rename/copy detection
+git config --global alias.filediff \
+"diff --find-renames --find-copies"
 
-# Show the blame information for a file
+# Ignore whitespace during blame
 git config --global alias.blame "blame -w"
 
-# Show a compact view of the stash
-git config --global alias.stashlist "stash list --pretty='%gd: %C(yellow)%cr%Creset %s %C(bold blue)<%an>%Creset'"
 
-# Show the most recent stash
-git config --global alias.laststash "stash show -p"
+# ---------------------------------------------------------
+# Commit helpers
+# ---------------------------------------------------------
 
-# Show the content of a stash
-git config --global alias.showstash "stash show -p"
+# Add everything and commit with message
+git config --global alias.acm \
+'!f() { git add . && git commit -m "$1"; }; f'
 
-# Apply the most recent stash
-git config --global alias.applystash "stash apply"
+# Amend last commit without changing message
+git config --global alias.amend \
+"commit --amend --no-edit"
 
-# Create and switch to a new branch
-git config --global alias.newbr "checkout -b"
+# Undo last commit but keep changes in working tree
+git config --global alias.undo \
+"reset HEAD~1 --mixed"
 
-# Delete a branch locally and remotely
-git config --global alias.delbr '!f() { git branch -d "$1" && git push origin --delete "$1"; }; f'
 
-# Add Commit & Message in one line
-git config --global alias.acm '!f() { git add . && git commit -m "$1"; }; f'
+# ---------------------------------------------------------
+# Push / pull
+# ---------------------------------------------------------
 
-# Set upstream branch
-git config --global alias.pushup "!git push --set-upstream origin"
+# Push current branch and establish upstream
+git config --global alias.pusho \
+"push -u origin HEAD"
 
-# Check if remote branch is present or not
-git config --global alias.checkremote "!f() { git fetch origin && git branch --remotes | grep -q \"origin/$1\" && echo \"Branch '$1' exists in the remote repository\" || echo \"Branch '$1' does not exist in the remote repository\"; }; f"
+# Pull current branch
+git config --global alias.pullo \
+"pull"
 
-# Check if local branch is present or not
-git config --global alias.checklocal "!f() { git branch --list | grep -q \"$1\" && echo \"Branch '$1' exists locally\" || echo \"Branch '$1' does not exist locally\"; }; f"
+# Set upstream for current branch
+git config --global alias.pushup \
+"push --set-upstream origin HEAD"
 
-# Add Delete File in one line
-git config --global alias.clean-dry '!f() { git clean -n -d && read -p "Continue with deletion? (y/n): " response && if [ "$response" = "y" ]; then git clean -f -d; fi; }; f'
 
-# Check if all commands were successful and display a message
-if [ $? -eq 0 ]; then
-    echo "All Git aliases added successfully."
-else
-    echo "Error occurred while adding Git aliases."
-fi
+# ---------------------------------------------------------
+# Remote management
+# ---------------------------------------------------------
+
+# Remove origin, or supplied remote
+git config --global alias.rm-remote \
+'!f() { if [ -z "$1" ]; then git remote remove origin; else git remote remove "$1"; fi; }; f'
+
+# Check whether remote branch exists
+git config --global alias.checkremote \
+'!f() { git fetch origin --quiet && if git show-ref --verify --quiet "refs/remotes/origin/$1"; then echo "Remote branch '\''$1'\'' exists"; else echo "Remote branch '\''$1'\'' does not exist"; fi; }; f'
+
+# Check whether local branch exists
+git config --global alias.checklocal \
+'!f() { if git show-ref --verify --quiet "refs/heads/$1"; then echo "Local branch '\''$1'\'' exists"; else echo "Local branch '\''$1'\'' does not exist"; fi; }; f'
+
+
+# ---------------------------------------------------------
+# Branch management
+# ---------------------------------------------------------
+
+# Delete local branch AND corresponding remote branch
+# Intentionally uses safe -d rather than force -D.
+git config --global alias.delbr \
+'!f() { git branch -d "$1" && git push origin --delete "$1"; }; f'
+
+
+# ---------------------------------------------------------
+# Stash
+# ---------------------------------------------------------
+
+# Pretty stash list
+git config --global alias.stashlist \
+"stash list --pretty='%gd: %C(yellow)%cr%Creset %s'"
+
+# Show latest stash
+git config --global alias.laststash \
+"stash show -p stash@{0}"
+
+# Show supplied stash, defaulting to latest
+git config --global alias.showstash \
+'!f() { git stash show -p "${1:-stash@{0}}"; }; f'
+
+# Apply latest stash
+git config --global alias.applystash \
+"stash apply stash@{0}"
+
+
+# ---------------------------------------------------------
+# Cleanup
+# ---------------------------------------------------------
+
+# Remove node_modules from Git tracking without deleting it
+git config --global alias.cnm \
+"rm -r --cached --ignore-unmatch node_modules"
+
+# Preview git clean and require confirmation before deletion
+git config --global alias.clean-dry \
+'!f() { git clean -nd; printf "Delete these untracked files/directories? [y/N] "; read response; case "$response" in y|Y) git clean -fd ;; *) echo "Cancelled." ;; esac; }; f'
+
+
+# ---------------------------------------------------------
+# Configuration
+# ---------------------------------------------------------
+
+# List configured Git aliases
+git config --global alias.aliases \
+"config --get-regexp '^alias\\.'"
+
+
+echo
+echo "Git aliases installed successfully."
+echo
+echo "Run:"
+echo "  git aliases"
+echo
+echo "to see them."
